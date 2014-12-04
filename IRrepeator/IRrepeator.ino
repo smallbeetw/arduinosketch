@@ -18,18 +18,19 @@
  */
 #include <IRremote.h>
 
-const int RECV_PIN = 3;
+//#define DEBUG                // unmark this if you want print out RAW code
 
-IRrecv irrecv(RECV_PIN);	// can using any pin to be receiver on Teensy 2.0
-IRsend irsend;			// the specific transmit pin is 10 pin on Teensy 2.0
-
+const int RECV_PIN = 11;
+IRrecv irrecv(RECV_PIN);       // receive IR from 11 pin, IR receiver
+IRsend irsend;	               // define send from D3 pin, IR LED
+			       // the specific transmit pin is 10 pin on Teensy 2.0
 decode_results results;
 
 unsigned int rawbuf[RAWBUF];
 
 void setup()
 {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   irrecv.enableIRIn();		// Start the receiver
   irrecv.blink13(true);
 }
@@ -39,11 +40,29 @@ void loop() {
     /* convert volatile unsigned int to unsigned int array.
      * ignore results.rawbuf[0].
      */
-    for (int i = 0; i < results.rawlen - 1; i++)
+#ifdef DEBUG
+    Serial.print(results.value, HEX);
+    Serial.print(" (");
+    Serial.print(results.bits, DEC);
+    Serial.println(" bits)");
+    Serial.print("Raw (");
+    Serial.print(results.rawlen, DEC);
+    Serial.println("): ");
+#endif
+    for (int i = 0; i < results.rawlen - 1; i++) {
       rawbuf[i] = results.rawbuf[i + 1] * USECPERTICK;
+#ifdef DEBUG
+      Serial.print(rawbuf[i], DEC);
+      if (i < results.rawlen - 2)
+        Serial.print(",");
+      else
+        Serial.println("");
+#endif
+    }
 
     /* send raw data */
     irsend.sendRaw(rawbuf, results.rawlen - 1, 38);
+    delay(1000);
     
     /* enable interrupt for receive again */
     irrecv.enableIRIn();
