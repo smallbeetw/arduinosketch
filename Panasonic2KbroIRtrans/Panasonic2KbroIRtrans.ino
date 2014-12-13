@@ -18,8 +18,10 @@
  */
 #include <IRremote.h>
 
-#define MAP_SIZE 15
+#define MAP_SIZE 16
 
+#define PANASONIC_POWER   0xF61E2A57
+#define PANASONIC_DTVTV   0x1C42833F
 #define PANASONIC_OK      0xBB0ED9E1
 #define PANASONIC_RETURN  0xD28EF217
 #define PANASONIC_UP      0x4DE74847
@@ -47,6 +49,9 @@ struct transf_entry {
 };
 
 static struct transf_entry ir_transf_map[MAP_SIZE] = {
+  {PANASONIC_POWER, {200,900,200,750,250,750,200,750,200,750,250,2750,250,750,200,750,200}},
+  /* DTV/TV to kbro Power */
+  {PANASONIC_DTVTV, {200,900,200,750,250,750,200,750,200,750,250,2750,250,750,200,750,200}},
   {PANASONIC_OK, {250,850,250,1800,250,750,200,750,200,1050,200,1450,200,750,200,750,250}},
   {PANASONIC_RETURN, {250,850,250,1300,200,750,200,750,250,1000,200,2000,200,750,200,750,250}},
   /* Channel UP */
@@ -82,7 +87,11 @@ void loop() {
         if (results.value == ir_transf_map[i].panasonicCode) {
           /* send raw data when paired in map */
           irsend.sendRaw(ir_transf_map[i].kbroRawCode, 17, 38);
-          delay(30);    /* Good response result using 30 in this case */
+          if (results.value == PANASONIC_POWER || 
+              results.value == PANASONIC_DTVTV)
+            delay(400);		/* delay longer for power button */
+          else
+            delay(30);		/* Good response result using 30 for other button */
           break;
         }
       }
